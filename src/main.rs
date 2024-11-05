@@ -3,24 +3,32 @@ use std::collections::VecDeque;
 type Word = &'static str;
 type Depth = usize;
 
-fn word_chain_game(start: Word, end: Word) -> Option<usize> {
+fn word_chain_game(start: Word, end: Word) -> Option<Depth> {
     let mut queue = VecDeque::new();
     queue.push_back((start, 0));
 
     let mut candidates = get_words();
 
     while !queue.is_empty() && !candidates.is_empty() {
-        if let Some((_, depth)) = queue.iter().find(|(w, _)| *w == end) {
-            return Some(*depth);
+        match step(&mut queue, candidates, end) {
+            Ok(depth) => return Some(depth),
+            Err(remaining_candidates) => candidates = remaining_candidates,
         }
-        candidates = step(&mut queue, candidates);
     }
 
     None
 }
 
-fn step(queue: &mut VecDeque<(Word, Depth)>, candidates: Vec<Word>) -> Vec<Word> {
+fn step(
+    queue: &mut VecDeque<(Word, Depth)>,
+    candidates: Vec<Word>,
+    end: Word,
+) -> Result<Depth, Vec<Word>> {
     let (word, depth) = queue.pop_front().expect("queue should not be empty");
+    if word == end {
+        return Ok(depth);
+    }
+
     let mut remaining_candidates = Vec::new();
     for candidate in candidates {
         if 2 == word
@@ -34,7 +42,8 @@ fn step(queue: &mut VecDeque<(Word, Depth)>, candidates: Vec<Word>) -> Vec<Word>
             remaining_candidates.push(candidate);
         }
     }
-    remaining_candidates
+
+    Err(remaining_candidates)
 }
 
 fn main() {
