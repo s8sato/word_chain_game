@@ -10,9 +10,8 @@ fn word_chain_game(start: Word, end: Word) -> Option<Depth> {
     let mut candidates = get_words();
 
     while !queue.is_empty() && !candidates.is_empty() {
-        match step(&mut queue, candidates, end) {
-            Ok(depth) => return Some(depth),
-            Err(remaining_candidates) => candidates = remaining_candidates,
+        if let Some(end_depth) = step(&mut queue, &mut candidates, end) {
+            return Some(end_depth);
         }
     }
 
@@ -21,29 +20,29 @@ fn word_chain_game(start: Word, end: Word) -> Option<Depth> {
 
 fn step(
     queue: &mut VecDeque<(Word, Depth)>,
-    candidates: Vec<Word>,
+    candidates: &mut Vec<Word>,
     end: Word,
-) -> Result<Depth, Vec<Word>> {
+) -> Option<Depth> {
     let (word, depth) = queue.pop_front().expect("queue should not be empty");
+
     if word == end {
-        return Ok(depth);
+        return Some(depth);
     }
 
-    let mut remaining_candidates = Vec::new();
-    for candidate in candidates {
-        if 2 == word
-            .chars()
-            .zip(candidate.chars())
-            .filter(|(l, r)| l == r)
-            .count()
-        {
+    candidates.retain(|candidate| {
+        let is_queued = 2
+            == word
+                .chars()
+                .zip(candidate.chars())
+                .filter(|(l, r)| l == r)
+                .count();
+        if is_queued {
             queue.push_back((candidate, depth + 1));
-        } else {
-            remaining_candidates.push(candidate);
         }
-    }
+        !is_queued
+    });
 
-    Err(remaining_candidates)
+    None
 }
 
 fn main() {
